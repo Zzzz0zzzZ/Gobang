@@ -20,7 +20,8 @@
             </el-form-item>
         </el-form>
         <div class="container" style="padding: 5px;">
-            <h2 style="margin-top: 10px; margin-bottom:1px;">{{ get_notice(game_state) }}</h2>
+            <h2 style="margin-top: 10px; margin-bottom:1px;">{{ get_notice(game_state) + `(steps:${count_steps - 1})` }}
+            </h2>
         </div>
         <div class="container">
             <div v-for="x in parseInt(data)" class="row" :key="x">
