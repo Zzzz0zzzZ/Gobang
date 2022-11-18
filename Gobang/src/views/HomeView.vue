@@ -19,6 +19,9 @@
                 <el-button type="info" @click="onRefresh">重新开始！</el-button>
             </el-form-item>
         </el-form>
+        <div class="container" style="padding: 5px;">
+            <h2 style="margin-top: 10px; margin-bottom:1px;">{{ get_notice(game_state) }}</h2>
+        </div>
         <div class="container">
             <div v-for="x in parseInt(data)" class="row" :key="x">
                 <span v-for="y in parseInt(data)" class="chess" :id="parseInt(data) * (x - 1) + y" :key="x * 100 + y"
@@ -98,6 +101,17 @@ const search_field = ref({
     col_start: inf,
     col_end: -inf
 })
+const game_state = ref(0)
+
+// 返回提示信息
+const get_notice = state => {
+    if (state === 0) return "准备开始"
+    else if (state === 1) return "该你下棋了"
+    else if (state === 2) return "电脑思考中..."
+    else if (state === 3) return "真厉害呢, 你竟然赢了！"
+    else if (state === 4) return "好可惜啊，你输了呢!"
+    else return "好可惜啊，你输了呢～"
+}
 
 // 根据x,y下标，获取domId
 const getDomId = (x, y) => { return parseInt(data.value) * (x - 1) + y }
@@ -109,15 +123,12 @@ const onSubmit = () => {
     // 创建数组
     chess_board_arr.value = null
     chess_board_arr.value = Array.from(Array(data.value), () => Array(data.value).fill(0))
+    game_state.value = (settings.value.first == 1) ? 2 : 1
     // 判断先手
     setTimeout(() => {
         if (settings.value.first === 1) {
-
-            console.log(chess_board_arr.value);
             let [x, y] = [parseInt(data.value / 2) + 1, parseInt(data.value / 2) + 1]
-
             let id = getDomId(x, y)
-            console.log('id', id);
             // 获取dom
             let dom = document.getElementById(id)
             // 设置属性
@@ -130,7 +141,7 @@ const onSubmit = () => {
             chess_board_arr.value[x - 1][y - 1] = do_chess.ai
             // 更新搜索边界
             update_field(x - 1, y - 1)
-            console.log('upd-f', search_field.value);
+            game_state.value = 1
         }
     }, 500);
 }
@@ -195,46 +206,57 @@ const onClickBoard = (x, y) => {
         chess_board_arr.value[x - 1][y - 1] = do_chess.me
         // 更新搜索边界
         update_field(x - 1, y - 1)
-
-        if (state() !== State.on) {
-            if (state() === State.ai_win) {
-                showNotice('好可惜，你输了！')
-            }
-            else if (state() === State.human_win) {
-                showNotice('好厉害，你赢了！')
-            }
-            else if (state() === State.tie) {
-                showNotice('棋盘下满了,和局！')
-            }
-        }
-        else {
-            let [x, y, _x, _y] = work()
-            let id = getDomId(x + 1, y + 1)
-            let dom = document.getElementById(id)
-            dom.style.backgroundColor = color_pad[1]
-            dom.innerHTML = `${count_steps.value}`
-            dom.style.color = color_pad[0]
-            dom.style.lineHeight = '32px'
-            count_steps.value++
-            // 更新矩阵
-            chess_board_arr.value[x][y] = do_chess.ai
-            // 更新搜索边界
-            update_field(x, y)
+        game_state.value = 2
+        setTimeout(() => {
             if (state() !== State.on) {
                 if (state() === State.ai_win) {
+                    game_state.value = 4
                     showNotice('好可惜，你输了！')
                 }
                 else if (state() === State.human_win) {
+                    game_state.value = 3
                     showNotice('好厉害，你赢了！')
                 }
                 else if (state() === State.tie) {
+                    game_state.value = 5
                     showNotice('棋盘下满了,和局！')
                 }
-                else {
-                    console.log(_x, _y);
+            }
+            else {
+
+                let [x, y, _x, _y] = work()
+                let id = getDomId(x + 1, y + 1)
+                let dom = document.getElementById(id)
+                dom.style.backgroundColor = color_pad[1]
+                dom.innerHTML = `${count_steps.value}`
+                dom.style.color = color_pad[0]
+                dom.style.lineHeight = '32px'
+                count_steps.value++
+                // 更新矩阵
+                chess_board_arr.value[x][y] = do_chess.ai
+                // 更新搜索边界
+                update_field(x, y)
+                game_state.value = 1
+                if (state() !== State.on) {
+                    if (state() === State.ai_win) {
+                        game_state.value = 4
+                        showNotice('好可惜，你输了！')
+                    }
+                    else if (state() === State.human_win) {
+                        game_state.value = 3
+                        showNotice('好厉害，你赢了！')
+                    }
+                    else if (state() === State.tie) {
+                        game_state.value = 5
+                        showNotice('棋盘下满了,和局！')
+                    }
+                    else {
+                        console.log(_x, _y);
+                    }
                 }
             }
-        }
+        }, 300);
+
     }
     else {
         ElMessage({
